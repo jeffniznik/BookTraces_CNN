@@ -43,17 +43,22 @@ model_pt16_3 <- keras_model_sequential() %>%
   layer_dense(units = 1, activation = "sigmoid")
 
 freeze_weights(conv_base)
-model_pt16_3 %>% compile(
+
+# Replicates the model on 8 GPUs.
+parallel_model <- multi_gpu_model(model_pt16_3, gpus = 8)
+parallel_model %>% compile(
   loss = "binary_crossentropy",
   optimizer = optimizer_rmsprop(lr = 2e-5),
   metrics = c("accuracy")
 )
-history <- model_pt16_3 %>% fit_generator(
+
+history <- parallel_model %>% fit_generator(
   train_array_gen3,
   steps_per_epoch = 90,
   epochs = 8,     # will be increased for ||computing, watching for overfitting 
   validation_data = validation_array_gen2,
-  validation_steps = 45
+  validation_steps = 45,
+  workers = 8 # for 8 GPUs
 )
 
 # Results 
